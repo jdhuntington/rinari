@@ -66,6 +66,9 @@
 (defvar ruby-compilation-executable "ruby"
   "What bin to use to launch the tests. Override if you use JRuby etc.")
 
+(defvar rake-compilation-executable "rake"
+  "What rake to use. Override if you use things in alternate locations etc.")
+
 (defun ruby-compilation-run (cmd)
   "Run a ruby process dumping output to a ruby compilation buffer."
   (interactive "FRuby Comand: ")
@@ -84,7 +87,7 @@
 			(read-from-minibuffer "Edit Rake Command: " (concat task " "))
 		      task)))
     (pop-to-buffer (ruby-compilation-do
-		    "rake" (cons "rake"
+		    "rake" (cons rake-compilation-executable
 				 (ruby-args-to-list rake-args))))))
 
 (defun ruby-compilation-this-buffer ()
