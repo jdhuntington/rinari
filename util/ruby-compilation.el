@@ -69,6 +69,9 @@
 (defvar rake-compilation-executable "rake"
   "What rake to use. Override if you use things in alternate locations etc.")
 
+(defvar ruby-compilation-test-name-flag "-n"
+  "What flag to use to specify that you want to run a single test.")
+
 (defun ruby-compilation-run (cmd)
   "Run a ruby process dumping output to a ruby compilation buffer."
   (interactive "FRuby Comand: ")
@@ -98,18 +101,23 @@
 (defun ruby-compilation-this-test ()
   "Run the test at point through Ruby compilation."
   (interactive)
-  (let ((method (which-function)))
-    (if (or (not method)
-            (not (string-match "#test_" method)))
+  (let ((test-name (ruby-compilation-this-test-name)))
+    (pop-to-buffer (ruby-compilation-do
+                    (format "ruby: %s - %s"
+                            (file-name-nondirectory (buffer-file-name))
+                            test-name)
+                    (list ruby-compilation-executable
+                          (buffer-file-name)
+                          ruby-compilation-test-name-flag test-name)))))
+
+(defun ruby-compilation-this-test-name ()
+  "Which test are we currently in?"
+  (let ((this-test (which-function)))
+    (if (listp this-test) (setq this-test (car this-test)))
+    (if (or (not this-test)
+            (not (string-match "#test_" this-test)))
         (message "Point is not in a test.")
-      (let ((test-name (cadr (split-string method "#"))))
-        (pop-to-buffer (ruby-compilation-do
-                        (format "ruby: %s - %s"
-                                (file-name-nondirectory (buffer-file-name))
-                                test-name)
-                        (list ruby-compilation-executable
-                              (buffer-file-name)
-                              "-n" test-name)))))))
+      (cadr (split-string this-test "#")))))
 
 (defun ruby-compilation-do (name cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
@@ -166,6 +174,7 @@ compilation buffer."
 
 (defvar ruby-compilation-minor-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "q"    'quit-window)
     (define-key map "p"    'previous-error-no-select)
     (define-key map "n"    'next-error-no-select)
     (define-key map "\M-p" 'ruby-compilation-previous-error-group)
