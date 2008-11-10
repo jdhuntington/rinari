@@ -114,7 +114,7 @@
 (defun ruby-compilation-do (name cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
     (unless (comint-check-proc comp-buffer-name)
-      ;; (if (get-buffer comp-buffer-name) (kill-buffer comp-buffer-name)) ;; actually rather keep
+      (if (get-buffer comp-buffer-name) (kill-buffer comp-buffer-name)) ;; actually don't keep
       (let* ((buffer (apply 'make-comint name (car cmdlist) nil (cdr cmdlist)))
 	     (proc (get-buffer-process buffer)))
 	(save-excursion
