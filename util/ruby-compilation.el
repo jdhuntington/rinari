@@ -77,8 +77,7 @@
   (interactive "FRuby Comand: ")
   (let ((name (file-name-nondirectory (car (split-string cmd))))
 	(cmdlist (cons ruby-compilation-executable
-                       ;; What on earth is ruby-args-to-list?
-                       (ruby-args-to-list (expand-file-name cmd)))))
+                       (split-string (expand-file-name cmd)))))
     (pop-to-buffer (ruby-compilation-do name cmdlist))))
 
 (defun ruby-compilation-rake (&optional edit task)
@@ -91,7 +90,7 @@
 		      task)))
     (pop-to-buffer (ruby-compilation-do
 		    "rake" (cons rake-compilation-executable
-				 (ruby-args-to-list rake-args))))))
+				 (split-string rake-args))))))
 
 (defun ruby-compilation-this-buffer ()
   "Run the current buffer through Ruby compilation."
