@@ -192,8 +192,8 @@ compilation buffer."
 ;; So we can invoke it easily.
 (eval-after-load 'ruby-mode
   '(progn
-     (define-key ruby-mode-map (kbd "C-x t") 'ruby-compilation-this-buffer)
-     (define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compilation-this-test)))
+     (define-key ruby-mode-map (kbd "M-C-x t") 'ruby-compilation-this-buffer)
+     (define-key ruby-mode-map (kbd "M-C-x M-C-t") 'ruby-compilation-this-test)))
 
 ;; So we don't get warnings with .dir-settings.el files
 (dolist (executable (list "jruby" "rbx" "ruby1.9" "ruby1.8" "ruby"))
