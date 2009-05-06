@@ -182,6 +182,17 @@ directory of the rails application."
 	 (script (concat "script/" script " ")))
     (ruby-compilation-run (concat root script (read-from-minibuffer script)))))
 
+(defun rinari-cap (&optional task)
+  "Tab completion selection of a capistrano task."
+  (interactive)
+  (cd (rinari-root))
+  (let ((output (split-string (shell-command-to-string "cap -T") "\n")) (tasks '()))
+    (dolist (line output)
+      (if (string-match "^cap \\([a-z]+[:_a-z]*\\) *.*$" line)
+          (add-to-list 'tasks (match-string 1 line))))
+    (or task (setq task (completing-read "Task: " tasks)))
+    (ruby-compilation-run (concat "/usr/bin/cap " task))))
+
 (defun rinari-test (&optional edit-cmd-args)
   "Test the current ruby function.  If current function is not a
 test, then try to jump to the related test using

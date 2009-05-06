@@ -32,7 +32,7 @@
 ;; source code.
 ;;
 ;; The functions you will probably want to use are
-;;
+;; 
 ;; cucumber-compilation-this-buffer (C-x t)
 ;; cucumber-compilation-this-scenario (C-x C-t)
 ;;
@@ -64,10 +64,7 @@
 (defvar cucumber-compilation-clear-between t
   "Whether to clear the compilation output between runs.")
 
-(defvar cucumber-compilation-reuse-buffers t
-  "Whether to re-use the same comint buffer for focussed tests.")
-
-(defadvice cucumber-compilation-do (around cucumber-compilation-do activate)
+(defadvice cucumber-compilation-do (around rinari-compilation-do activate)
   "Set default directory to the root of the rails application
   before running cucumber processes."
   (let ((default-directory (or (rinari-root) default-directory)))
@@ -76,35 +73,28 @@
 
 ;;;###autoload
 (defun cucumber-compilation-this-buffer ()
-  "Run the current buffer's scenarios through cucumber."
+  "Run the current buffer's cucumbers through cucumber."
   (interactive)
   (cucumber-compilation-run (buffer-file-name)))
 
 ;;;###autoload
 (defun cucumber-compilation-this-scenario ()
-  "Run the scenario at point through cucumber."
+  "Run the cucumber at point through cucumber."
   (interactive)
   (let ((scenario-name (cucumber-compilation-this-scenario-name))
         (profile-name (cucumber-compilation-profile-name)))
     (pop-to-buffer (cucumber-compilation-do
-                    (cucumber-compilation-this-test-buffer-name scenario-name)
+                    (format "cucumber: %s - %s"
+                            (file-name-nondirectory (buffer-file-name))
+                            scenario-name)
                     (list cucumber-compilation-executable
                           (buffer-file-name)
                           "-p" profile-name
                           "-s" scenario-name)))))
 
-(defun cucumber-compilation-this-test-buffer-name (scenario-name)
-  "The name of the buffer in which test-at-point will run."
-  (interactive)
-  (if cucumber-compilation-reuse-buffers
-      (file-name-nondirectory (buffer-file-name))
-    (format "cucumber: %s - %s"
-            (file-name-nondirectory (buffer-file-name))
-            scenario-name)))
-
 ;;;###autoload
 (defun cucumber-compilation-run (cmd)
-  "Run a cucumber process, dumping output to a compilation buffer."
+  "Run a cucumber process dumping output to a compilation buffer."
   (interactive)
   (let* ((name (file-name-nondirectory (car (split-string cmd))))
          (profile-name (cucumber-compilation-profile-name))
@@ -112,26 +102,27 @@
                         "-p" profile-name
                         (expand-file-name cmd))))
     (pop-to-buffer (cucumber-compilation-do name cmdlist))))
-
+  
 
 (defun cucumber-compilation-do (name cmdlist)
+  (print cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
     (unless (comint-check-proc comp-buffer-name)
       (let* ((buffer (apply 'make-comint name (car cmdlist) nil (cdr cmdlist)))
-         (proc (get-buffer-process buffer)))
-    (save-excursion
-      (set-buffer buffer) ;; set buffer local variables and process ornaments
-      (set-process-sentinel proc 'cucumber-compilation-sentinel)
-          (set-process-filter proc 'cucumber-compilation-insertion-filter)
-      (set (make-local-variable 'compilation-error-regexp-alist)
-           cucumber-compilation-error-regexp-alist)
-      (set (make-local-variable 'kill-buffer-hook)
-           (lambda ()
-         (let ((orphan-proc (get-buffer-process (buffer-name))))
-           (if orphan-proc
-               (kill-process orphan-proc)))))
-      (compilation-minor-mode t)
-      (cucumber-compilation-minor-mode t))))
+	     (proc (get-buffer-process buffer)))
+	(save-excursion
+	  (set-buffer buffer) ;; set buffer local variables and process ornaments
+	  (set-process-sentinel proc 'cucumber-compilation-sentinel)
+	  (set-process-filter proc 'cucumber-compilation-insertion-filter)
+	  (set (make-local-variable 'compilation-error-regexp-alist)
+	       cucumber-compilation-error-regexp-alist)
+	  (set (make-local-variable 'kill-buffer-hook)
+	       (lambda ()
+		 (let ((orphan-proc (get-buffer-process (buffer-name))))
+		   (if orphan-proc
+		       (kill-process orphan-proc)))))
+	  (compilation-minor-mode t)
+	  (cucumber-compilation-minor-mode t))))
     comp-buffer-name))
 
 (defun cucumber-compilation-sentinel (proc msg)
@@ -158,9 +149,9 @@
   (with-current-buffer (process-buffer proc)
     (let ((moving (= (point) (process-mark proc))))
       (save-excursion
-        (goto-char (process-mark proc))
-        (insert (ansi-color-filter-apply string))
-        (set-marker (process-mark proc) (point)))
+	(goto-char (process-mark proc))
+	(insert (ansi-color-filter-apply string))
+	(set-marker (process-mark proc) (point)))
       (if moving (goto-char (process-mark proc))))))
 
 (defun cucumber-compilation-this-scenario-name ()
@@ -175,9 +166,8 @@
    If not found, we'll default to 'default'."
   (save-excursion
     (goto-char (point-min))
-    (if (re-search-forward "^#[[:space:]]*profile:?[[:space:]]+\\(.+\\)" nil t)
-        (match-string-no-properties 1)
-      "default")))
+    (re-search-forward "^#[[:space:]]*profile[[:space:]]+\\(.+\\)" nil t)
+    (or (match-string-no-properties 1) "default")))
 
 (defvar cucumber-compilation-minor-mode-map
   (let ((map (make-sparse-keymap)))
